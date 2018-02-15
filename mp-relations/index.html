@@ -56,7 +56,7 @@ Licenced under GPLv3
 
 </style>
 <body>
-<script src="//d3js.org/d3.v3.js"></script>
+<script src="https://d3js.org/d3.v3.min.js"></script>
 <script>
 var diameter = 960,
     radius = diameter / 2,
@@ -116,7 +116,7 @@ function grad(a, b){
   return colors[a+b];
 }
 
-d3.json("mps.json", function(error, classes) {
+d3.json("example_mps.json", function(error, classes) {
   if (error) throw error;
 
   var nodes = cluster.nodes(packageHierarchy(classes)),
