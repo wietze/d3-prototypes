@@ -1,0 +1,53 @@
+body {
+    font-size: 12px;
+}
+
+path {
+    stroke-width: 0.25px;
+    stroke: white;
+    fill: #c4c4c4;
+    cursor: pointer;
+}
+
+path:hover,
+path.highlighted {
+    fill: tomato;
+}
+
+.widget {
+    position: relative;
+    width: 300px;
+    height: 300px;
+}
+
+#text_cont {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-size: 18px;
+}
+
+#container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.gain {
+    color: green;
+}
+
+.loss {
+    color: red;
+}
+
+#right-panel {
+    position: relative;
+    height: 900px;
+}
+
+#table td {
+    padding-left: 5px;
+}

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<!-- (c) @Wietze, 2018 -->
+<!-- https://www.twitter.com/wietze -->
+<!-- Please contact me if you want to use this project. -->
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="style.css">
+    <title>General Elections in the UK</title>
+</head>
+<body>
+    <div id="container">
+        <div id="map"></div>
+        <div id="right-panel" class="card">
+            <div class="card-header" style="font-weight: bold;">Constituency Result</div>
+            <div class="card-block" style=" display: flex; flex-direction: column; align-items: center;">
+                <div class="widget thumbnail">
+                    <div id="text_cont">
+                        <h4 id="con_name" style="line-height: 1em;" class="caption"></h4>
+                        <p id="party_name"></p>
+                    </div>
+                    <div id="chart" class="chart-container"></div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <table class="table" style="width: 400px">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th style="width: 40%">Party</th>
+                                <th style="width: 40%">Candidate</th>
+                                <th style="width: 10%">Votes</th>
+                                <th style="width: 10%">Change</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                Show Election:
+                <div id="years" class="btn-group" data-toggle="buttons"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://d3js.org/topojson.v1.min.js"></script>
+    <script src="2017.js"></script>
+    <script src="2015.js"></script>
+    <script>
+        var party_colours = {
+            "Labour": "#d50000",
+            "Labour and Co-operative": "#d50000",
+            "Social Democratic Labour Party": "#DC241F",
+            "Conservative": "#0087DC",
+            "UK Independence Party": "#70147A",
+            "Green": "#008066",
+            "Liberal Democrat": "#FDBB30",
+            "Scottish National Party": "#FFFF00",
+            "Democratic Unionist Party": "#CC3300",
+            "Sinn Fein": "#006600",
+            "Speaker": "#333333",
+            "Independent": "#333333",
+            "Ulster Unionist Party": "#9999FF",
+            'Plaid Cymru': '#3F8428'
+        };
+
+        //Map dimensions (in pixels)
+        var width = 1.5 * 320,
+            height = 1.5 * 600;
+
+        year = 2017
+
+        //Map projection
+        var projection = d3.geo.mercator()
+            .scale(1.5 * 1674.856649369299)
+            .center([-3.4435456391840495, 55.748917146882555]) //projection center
+            .translate([width / 2, height / 2]) //translate to center the map in view
+
+        //Generate paths based on projection
+        var path = d3.geo.path()
+            .projection(projection);
+
+        //Create an SVG
+        var svg = d3.select("#map").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        //Group for the map features
+        var features = svg.append("g")
+            .attr("class", "features");
+
+        //Create zoom/pan listener
+        //Change [1,Infinity] to adjust the min/max zoom scale
+        var zoom = d3.behavior.zoom()
+            .scaleExtent([1, Infinity])
+            .on("zoom", zoomed);
+
+        svg.call(zoom);
+
+        d3.json("https://raw.githubusercontent.com/martinjc/UK-GeoJSON/master/json/electoral/gb/topo_wpc.json",
+            function (error, geodata) {
+                if (error) return console.log(error); //unknown error, check the console
+
+                //Create a path for each map feature in the data
+                features.selectAll("path")
+                    .data(topojson.feature(geodata, geodata.objects.wpc).features) //generate features from TopoJSON
+                    .enter()
+                    .append("path")
+                    .style("fill", function (d) {
+                        winner = the_winner(results[year][d.properties.PCON13CD]).name;
+                        return winner in party_colours ? party_colours[winner] : 'black';
+                    })
+                    .attr("d", path)
+                    .on("mouseover", function (d) {
+                        winnerr = the_winner(results[year][d.properties.PCON13CD])
+                        d3.select('#con_name').text(d.properties.PCON13NM);
+                        d3.select('#party_name').text(winnerr.name + " " + winnerr.holdgain);
+
+                        model2 = results[year][d.properties.PCON13CD];
+                        var model = Object.keys(model2).map(function (key) {
+                            model2[key]['name'] = key;
+                            return model2[key];
+                        });
+                        model.sort(function (a, b) {
+                            return b.votes - a.votes;
+                        });
+                        var pie = d3.layout.pie().value(function (d) {
+                                return d.votes
+                            })
+                            .sort(function (a, b) {
+                                return a.votes < b.votes
+                            })
+                            .padAngle(.03);
+
+                        var w = 300,
+                            h = 300;
+
+                        var outerRadius = w / 2;
+                        var innerRadius = 100;
+
+                        var color = d3.scale.category10();
+
+                        var arc = d3.svg.arc()
+                            .outerRadius(outerRadius)
+                            .innerRadius(innerRadius);
+                        var svg = d3.select("#chart")
+                            .append("svg")
+                            .attr({
+                                width: w,
+                                height: h,
+                                class: 'shadow'
+                            }).append('g')
+                            .attr({
+                                transform: 'translate(' + w / 2 + ',' + h / 2 + ')'
+                            });
+                        var g = svg.selectAll('path')
+                            .data(pie(model))
+                            .enter()
+
+                        g.append('path')
+                            .attr({
+                                d: arc
+                            })
+                            .style('fill', function (d, i) {
+                                return party_colours[d.data.name];
+                            });
+
+                        g.append("text")
+                            .attr("transform", function (d) {
+                                return "translate(" + arc.centroid(d) + ")";
+                            }).attr("text-anchor", "middle")
+                            .text(function (d) {
+                                return d.data.share > 0.035 ? ((d.data.share) * 100).toFixed(1) + '%' : "";
+                            });
+
+                        var tab = d3.select("#table").selectAll('span').data(model).enter();
+                        tab.append('tr').html(function (d) {
+                            return "<td style='width: 20px; background-color: " + party_colours[d.name] +
+                                "'></td><td>" + d.name + "</td><td>" + d.first_name + " " + d.last_name +
+                                "</td><td>" + d.votes.toLocaleString() + "</td>" + diff(d.change);
+                        });
+                    })
+                    .on("mouseout", function (d) {
+                        d3.select('#con_name').text("");
+                        d3.select('#party_name').text("");
+                        d3.select("#chart").text("");
+                        d3.select('#table').html("");
+                    });
+
+                var labelEnter = d3.select("#years").selectAll("span")
+                    .data([{
+                        name: "2015"
+                    }, {
+                        name: "2017"
+                    }])
+                    .enter().append("label").attr("class", function (x, i) {
+                        return "btn btn-secondary" + (i == 1 ? " active" : "");
+                    });
+
+                labelEnter.append("input")
+                    .attr({
+                        type: "radio",
+                        name: "mode",
+                        onchange: function (d, i) {
+                            return "changeyear(" + d.name + ")";
+                        }
+                    })
+                    .property("checked", function (d, i) {
+                        return (i === 1);
+                    });
+
+                labelEnter.append("span").text(function (d) {
+                    return d.name
+                });
+
+            });
+
+        function diff(change) {
+            if (change > 0)
+                return '<td class="gain">+' + ((change) * 100).toFixed(1) + '%</td>'
+            if (change < 0)
+                return '<td class="loss">' + ((change) * 100).toFixed(1) + '%</td>'
+            return '<td>-</td>';
+        }
+
+        function the_winner(constituency) {
+            winner = undefined, votes = 0;
+            for (var party in constituency) {
+                if (constituency[party]['votes'] > votes) {
+                    votes = constituency[party]['votes'];
+                    winner = party
+                    hold_gain = constituency[party]['sitting_mp'] === "Yes" ? "hold" : "gain";
+                }
+            }
+            return {
+                'name': winner,
+                'holdgain': hold_gain
+            };
+        }
+
+        //Update map on zoom/pan
+        function zoomed() {
+            features.attr("transform", "translate(" + zoom.translate() + ")scale(" + zoom.scale() + ")")
+                .selectAll("path").style("stroke-width", 0.25 / zoom.scale() + "px");
+        }
+
+        function changeyear(new_year) {
+            year = new_year;
+            features.selectAll("path")
+                .transition().duration(500).style("fill", function (d) {
+                    winner = the_winner(results[year][d.properties.PCON13CD]).name;
+                    return winner in party_colours ? party_colours[winner] : 'black';
+                })
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
+        crossorigin="anonymous"></script>
