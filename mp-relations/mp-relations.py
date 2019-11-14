@@ -1,22 +1,26 @@
-﻿from urllib.request import Request, urlopen
-from urllib.parse import quote_plus
+﻿import argparse
 import json
 import re
-import argparse
 from collections import Counter
+from urllib.parse import quote_plus
+
+import requests
 
 __author__    = "@Wietze"
-__copyright__ = "(c) 2016"
+__copyright__ = "(c) 2016-2019"
 __licence__   = "GPLv3"
 
-API_GUARDIAN = "http://content.guardianapis.com/search?q={keyword}&show-tags=keyword&api-key=test"
+API_KEY_GUARDIAN = 'test' # Or put your own API key here
+API_GUARDIAN = "http://content.guardianapis.com/search?q={{keyword}}&show-tags=keyword&api-key={api_key}".format(api_key=API_KEY_GUARDIAN)
 API_PARLIAMENT = "http://data.parliament.uk/membersdataplatform/services/mnis/members/query/House=Commons|IsEligible=true/"
+# When Parliament is not in session, replace `IsEligible=true` with the following in the above query condition: `MemberShip=All|LeftSince=yyyy-mm-dd`
+
 PARTY_COLOURS = {"Labour":[220./255, 36./255, 31./255, 1], "Conservative":[0, 135/255, 220/255, 1], "Social Democratic & Labour Party": [0, 135/255, 220/255, 1], "Scottish National Party":[1, 1, 0, 1], "Liberal Democrat":[253/255, 187/255, 48/255, 1], "UK Independence Party":[75/255, 0/255, 199/255, 1], "Green Party": [105/255, 245/255, 0, 1], "Labour (Co-op)": [220./255, 36./255, 31./255, 1], "Democratic Unionist Party": [204/255, 51/255, 0, 1], "Sinn Fein":[0, 102/255, 0, 1], "Ulster Unionist Party": [153/255, 153/255, 1, 1]}
 normalise_name = lambda x: re.sub('^(Sir |Dame |Mr |Ms |Mrs |Dr )', '', x).strip()
 
 def get_mp_data():
     print("Querying for MPs...")
-    mps = json.loads(urlopen(Request(API_PARLIAMENT, headers={"Accept":"application/json"})).read().decode('utf-8-sig'))
+    mps = requests.get(API_PARLIAMENT, headers={"Accept":"application/json"}).json()
 
     # Create common structure
     members = {normalise_name(member['DisplayAs']): {"party": member['Party']['#text'], "id":id, "mentioned_with":[], 'degree':0} for id, member in enumerate(mps["Members"]["Member"])}
@@ -24,8 +28,8 @@ def get_mp_data():
     for i, member in enumerate(members.keys(), start=1):
         print("Querying the Guardian... [{}/{}]".format(i, len(members)), end="\r")
         url = API_GUARDIAN.format(keyword=quote_plus(member))
-        guardian_data = json.loads(urlopen(url).read().decode())
-        if len(data["response"]["results"]) < 1: continue
+        guardian_data = requests.get(url).json()
+        if not guardian_data["response"]["results"]: continue
         tags = []
         for result in guardian_data["response"]["results"]:
             tags.extend([tag['webTitle'] for tag in result["tags"]])
