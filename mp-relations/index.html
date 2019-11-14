@@ -19,7 +19,7 @@ Licenced under GPLv3
     stroke-opacity: .6;
     fill: none;
     pointer-events: none;
-    stroke-width:2px;
+    stroke-width: 2px;
   }
 
   .node:hover {
@@ -43,168 +43,216 @@ Licenced under GPLv3
     stroke-opacity: 0.1;
   }
 
-  .Conservative { fill: #0087DC; }
-  .Labour, .LabourCo-op, .SocialDemocraticLabourParty { fill: #DC241F; }
-  .UKIndependenceParty { fill: #70147A; }
-  .GreenParty { fill: #78B943; }
-  .LiberalDemocrat { fill: #FDBB30; }
-  .ScottishNationalParty { fill: #FFFF00; }
-  .DemocraticUnionistParty { fill: #CC3300; }
-  .SinnFein { fill: #006600; }
-  .UlsterUnionistParty { fill: #9999FF; }
-  .Independent, .Speaker { fill: #333333; }
+  .Conservative {
+    fill: #0087DC;
+  }
 
+  .Labour,
+  .LabourCo-op,
+  .SocialDemocraticLabourParty {
+    fill: #DC241F;
+  }
+
+  .UKIndependenceParty {
+    fill: #70147A;
+  }
+
+  .GreenParty {
+    fill: #78B943;
+  }
+
+  .LiberalDemocrat {
+    fill: #FDBB30;
+  }
+
+  .ScottishNationalParty {
+    fill: #FFFF00;
+  }
+
+  .DemocraticUnionistParty {
+    fill: #CC3300;
+  }
+
+  .SinnFein {
+    fill: #006600;
+  }
+
+  .UlsterUnionistParty {
+    fill: #9999FF;
+  }
+
+  .Independent,
+  .Speaker {
+    fill: #333333;
+  }
 </style>
+
 <body>
-<script src="https://d3js.org/d3.v3.min.js"></script>
-<script>
-var diameter = 960,
-    radius = diameter / 2,
-    innerRadius = radius - 120;
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <script>
+    var diameter = 960,
+      radius = diameter / 2,
+      innerRadius = radius - 120;
 
-var cluster = d3.layout.cluster()
-    .size([360, innerRadius])
-    .sort(function(c, d){ return 'degree' in c && 'degree' in d ? d3.descending(c.degree,d.degree) : 0; });
+    var cluster = d3.layout.cluster()
+      .size([360, innerRadius]);
 
-var bundle = d3.layout.bundle();
+    var bundle = d3.layout.bundle();
 
-var line = d3.svg.line.radial()
-    .interpolate("bundle")
-    .tension(.85)
-    .radius(function(d) { return d.y; })
-    .angle(function(d) { return d.x / 180 * Math.PI; });
+    var line = d3.svg.line.radial()
+      .interpolate("bundle")
+      .tension(.85)
+      .radius(function (d) { return d.y; })
+      .angle(function (d) { return d.x / 180 * Math.PI; });
 
-var svg = d3.select("body").append("svg")
-    .attr("width", diameter)
-    .attr("height", diameter)
-  .append("g")
-    .attr("transform", "translate(" + radius + "," + radius + ")");
+    var svg = d3.select("body").append("svg")
+      .attr("width", diameter)
+      .attr("height", diameter)
+      .append("g")
+      .attr("transform", "translate(" + radius + "," + radius + ")");
 
-var link = svg.append("g").selectAll(".link"),
-    node = svg.append("g").selectAll(".node");
+    var link = svg.append("g").selectAll(".link"),
+      node = svg.append("g").selectAll(".node");
 
 
-var colors = {};
-var party_colors = {"Labour":"#DC241F","LabourCo-op":"#DC241F", "SocialDemocraticLabourParty":"#DC241F", "Conservative":"#0087DC", "UKIndependenceParty":"#70147A", "GreenParty":"#78B943", "LiberalDemocrat":"#FDBB30", "ScottishNationalParty":"#FFFF00", "DemocraticUnionistParty":"#CC3300", "SinnFein":"#006600", "Speaker":"#333333", "Independent":"#333333", "UlsterUnionistParty":"#9999FF"};
+    var colors = {};
+    var party_colors = { "Labour": "#DC241F", "LabourCo-op": "#DC241F", "SocialDemocraticLabourParty": "#DC241F", "Conservative": "#0087DC", "UKIndependenceParty": "#70147A", "GreenParty": "#78B943", "LiberalDemocrat": "#FDBB30", "ScottishNationalParty": "#FFFF00", "DemocraticUnionistParty": "#CC3300", "SinnFein": "#006600", "Speaker": "#333333", "Independent": "#333333", "UlsterUnionistParty": "#9999FF" };
 
-function grad(a, b){
-  if(!colors[a+b]){
-    if(a == b){
-      colors[a+b] = party_colors[a];
-    } else {
-      var gradient = svg.append("defs")
-        .append("linearGradient")
-          .attr("id", "gradient_"+a+"_"+b)
-          .attr("x1", "0%")
-          .attr("y1", "0%")
-          .attr("x2", "100%")
-          .attr("y2", "0%")
-          .attr("spreadMethod", "pad");
+    var defs = svg.append("defs");
 
-      gradient.append("stop")
-          .attr("offset", "0%")
-          .attr("stop-color", party_colors[a])
-          .attr("stop-opacity", 1);
+    function grad(d) {
 
-      gradient.append("stop")
-          .attr("offset", "100%")
-          .attr("stop-color", party_colors[b])
-          .attr("stop-opacity", 1);
-      colors[a+b] = "url(#gradient_"+a+"_"+b+")";
+      start_name = d.source.name.replace(/[ &()]/g, "");
+      end_name = d.target.name.replace(/[ &()]/g, "");
+      start_colour = party_colors[d.source.party.replace(/[ &()]/g, "")]
+      end_colour = party_colors[d.target.party.replace(/[ &()]/g, "")]
+
+
+      if (!colors[start_name + end_name]) {
+        if (start_colour == end_colour) {
+          colors[start_name + end_name] = start_colour;
+        } else {
+
+          var gradient = defs
+            .append("linearGradient")
+            .attr("id", "gradient_" + start_name + "_" + end_name)
+            .attr("x1", innerRadius * Math.cos(d.source.x * Math.PI / 180 - Math.PI / 2))
+            .attr("y1", innerRadius * Math.sin(d.source.x * Math.PI / 180 - Math.PI / 2))
+            .attr("x2", innerRadius * Math.cos(d.target.x * Math.PI / 180 - Math.PI / 2))
+            .attr("y2", innerRadius * Math.sin(d.target.x * Math.PI / 180 - Math.PI / 2))
+            .attr("gradientUnits", "userSpaceOnUse")
+            ;
+
+          gradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", start_colour)
+            .attr("stop-opacity", 1);
+
+          gradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", end_colour)
+            .attr("stop-opacity", 1);
+          colors[start_name + end_name] = "url(#gradient_" + start_name + "_" + end_name + ")";
+        }
+      }
+      return colors[start_name + end_name];
     }
-  }
-  return colors[a+b];
-}
 
-d3.json("example_mps.json", function(error, classes) {
-  if (error) throw error;
+    d3.json("example_mps_2019.json", function (error, classes) {
+      if (error) throw error;
 
-  var nodes = cluster.nodes(packageHierarchy(classes)),
-      links = packageImports(nodes);
+      counts = {}; max_degree = 0;
+      classes.forEach(function (x) { counts[x.party] = (counts[x.party] || 0) + 1; max_degree = Math.max(max_degree, x.degree); })
+      classes.sort(function (a, b) { return a.party == b.party ? d3.descending(a.degree, b.degree) : counts[a.party] < counts[b.party]; })
 
-  link = link
-      .data(bundle(links))
-      .enter().append("path")
-      .each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
-      .attr("class", "link link-inactive")
-      .style("stroke", function(d){ var a = d.source.party.replace(/[ &()]/g, ""); var b = d.target.party.replace(/[ &()]/g, ""); return d.source.x > d.target.x  || d.source.x > 270? grad(a,b) : grad(b, a); })
-      .attr("d", line);
+      var nodes = cluster.nodes(packageHierarchy(classes)),
+        links = packageImports(nodes);
 
-  node = node
-      .data(nodes.filter(function(n) { return !n.children; }))
-      .enter().append("text")
-      .attr("class", function(d){ return "node-inactive node "+d.party.replace(/[ &()]/g, "");; })
-      .attr("dy", ".31em")
-      .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
-      .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-      .text(function(d) { return d.name; })
-      .on("mouseover", mouseovered)
-      .on("mouseout", mouseouted);
+      link = link
+        .data(bundle(links))
+        .enter().append("path")
+        .each(function (d) { d.source = d[0], d.target = d[d.length - 1]; })
+        .attr("class", "link link-inactive")
+        .style("stroke", function (d) { return grad(d) })
+        //.style("stroke-width", function(d){ return 5* d.source.degree })
+        .attr("d", line);
 
-});
+      node = node
+        .data(nodes.filter(function (n) { return !n.children; }))
+        .enter().append("text")
+        .attr("class", function (d) { return "node-inactive node " + d.party.replace(/[ &()]/g, "");; })
+        .attr("dy", ".31em")
+        .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+        .style("text-anchor", function (d) { return d.x < 180 ? "start" : "end"; })
+        .text(function (d) { return d.name; })
+        .on("mouseover", mouseovered)
+        .on("mouseout", mouseouted);
 
-var div = d3.select("body").append("style").attr("type","text/css");
-function mouseovered(d) {
-  div.html(".link-inactive { stroke: #BBB !important; stroke-opacity: 0.1; stroke-width: 2px !important; } .link {stroke-width: 4px; } .node-inactive { fill: #bbb !important; font-weight: 300 !important; } .node {font-weight: 700; }")
-
-  node.each(function(n) { n.target = n.source = false; });
-  link.classed("link-inactive", function(l) { if (l.target === d){ l.source.source = true; return false; } else if(l.source ===d){ l.target.target = true; return false; } return true;});
-  node.classed("node-inactive", function(n) { return !(n.target || n.source); });
-}
-
-function mouseouted(d) {
-  div.html("")
-  link.classed("link-inactive", true);
-  node.classed("node-inactive", true);
-}
-
-d3.select(self.frameElement).style("height", diameter + "px");
-
-function packageHierarchy(classes) {
-  var map = [{"name":"", children:[]}];
-
-  function find(name, data) {
-      var j = map[0].children.find(function (x) { return x.name === data.party; });
-
-      if(!j){
-        j = {'name':data.party, children: []};
-        map[0].children.push(j);
-      }
-      if(data.mentioned_with.length > 0){
-        var node = {name: name, party:data.party, 'mentioned_with':data.mentioned_with, degree: data.degree};
-        j.children.push(node);
-      }
-      return node;
-  }
-
-  classes.forEach(function(d) {
-    find(d.name, d);
-  });
-
-  return map[0];
-}
-
-// Return a list of imports for the given array of nodes.
-function packageImports(nodes) {
-  var map = {},
-      imports = [];
-
-  // Compute a map from name to node.
-  nodes.forEach(function(d) {
-    map[d.name] = d;
-  });
-
-  // For each import, construct a link from the source to target node.
-  nodes.forEach(function(d) {
-    if (d.mentioned_with) d.mentioned_with.forEach(function(i) {
-      imports.push({source: d, target: map[i.name], weight: i.count});
     });
-  });
 
-  return imports.filter(function(x){ return x.target; });
-}
+    var div = d3.select("body").append("style").attr("type", "text/css");
+    function mouseovered(d) {
+      div.html(".link-inactive { stroke: #BBB !important; stroke-opacity: 0.1; stroke-width: 2px !important; } .link {stroke-width: 4px; } .node-inactive { fill: #bbb !important; font-weight: 300 !important; } .node {font-weight: 700; }")
 
-</script>
+      node.each(function (n) { n.target = n.source = false; });
+      link.classed("link-inactive", function (l) { if (l.target === d) { l.source.source = true; return false; } else if (l.source === d) { l.target.target = true; return false; } return true; });
+      node.classed("node-inactive", function (n) { return !(n.target || n.source); });
+    }
+
+    function mouseouted(d) {
+      div.html("")
+      link.classed("link-inactive", true);
+      node.classed("node-inactive", true);
+    }
+
+    d3.select(self.frameElement).style("height", diameter + "px");
+
+    function packageHierarchy(classes) {
+      var map = [{ "name": "", children: [] }];
+
+      function find(name, data) {
+        var j = map[0].children.find(function (x) { return x.name === data.party; });
+
+        if (!j) {
+          j = { 'name': data.party, children: [] };
+          map[0].children.push(j);
+        }
+        if (data.mentioned_with.length > 0) {
+          var node = { name: name, party: data.party, 'mentioned_with': data.mentioned_with, degree: data.degree };
+          j.children.push(node);
+        }
+        return node;
+      }
+
+      classes.forEach(function (d) {
+        find(d.name, d);
+      });
+
+      return map[0];
+    }
+
+    // Return a list of imports for the given array of nodes.
+    function packageImports(nodes) {
+      var map = {},
+        imports = [];
+
+      // Compute a map from name to node.
+      nodes.forEach(function (d) {
+        map[d.name] = d;
+      });
+
+      // For each import, construct a link from the source to target node.
+      nodes.forEach(function (d) {
+        if (d.mentioned_with) d.mentioned_with.forEach(function (i) {
+          imports.push({ source: d, target: map[i.name], weight: i.count });
+        });
+      });
+
+      return imports.filter(function (x) { return x.target; });
+    }
+
+  </script>
 
 </body>
+
 </html>
