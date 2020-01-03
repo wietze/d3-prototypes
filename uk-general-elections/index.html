@@ -1,21 +1,23 @@
 <!DOCTYPE html>
-<!-- (c) @Wietze, 2018 -->
+<!-- (c) @Wietze, 2018-2020 -->
 <!-- https://www.twitter.com/wietze -->
 <!-- Please contact me if you want to use this project. -->
 
 <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ"
-        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
+        integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
     <link rel="stylesheet" href="style.css">
     <title>General Elections in the UK</title>
 </head>
+
 <body>
     <div id="container">
         <div id="map"></div>
         <div id="right-panel" class="card">
             <div class="card-header" style="font-weight: bold;">Constituency Result</div>
-            <div class="card-block" style=" display: flex; flex-direction: column; align-items: center;">
+            <div class="card-block"
+                style="display: flex; flex-direction: column; align-items: safe center; overflow-x:scroll">
                 <div class="widget thumbnail">
                     <div id="text_cont">
                         <h4 id="con_name" style="line-height: 1em;" class="caption"></h4>
@@ -45,9 +47,10 @@
             </div>
         </div>
     </div>
-
+    <script>results = {}; winners = { 2019: {}, 2017: {}, 2015: {} }</script>
     <script src="https://d3js.org/d3.v3.min.js"></script>
     <script src="https://d3js.org/topojson.v1.min.js"></script>
+    <script src="2019.js"></script>
     <script src="2017.js"></script>
     <script src="2015.js"></script>
     <script>
@@ -63,16 +66,17 @@
             "Democratic Unionist Party": "#CC3300",
             "Sinn Fein": "#006600",
             "Speaker": "#333333",
-            "Independent": "#333333",
+            "Independent": "#BBBBBB",
             "Ulster Unionist Party": "#9999FF",
-            'Plaid Cymru': '#3F8428'
+            'Plaid Cymru': '#3F8428',
+            'Brexit Party': "#12B6CF"
         };
 
         //Map dimensions (in pixels)
         var width = 1.5 * 320,
             height = 1.5 * 600;
 
-        year = 2017
+        year = 2019
 
         //Map projection
         var projection = d3.geo.mercator()
@@ -111,12 +115,12 @@
                     .enter()
                     .append("path")
                     .style("fill", function (d) {
-                        winner = the_winner(results[year][d.properties.PCON13CD]).name;
+                        winner = the_winner(year, d.properties.PCON13CD).name;
                         return winner in party_colours ? party_colours[winner] : 'black';
                     })
                     .attr("d", path)
                     .on("mouseover", function (d) {
-                        winnerr = the_winner(results[year][d.properties.PCON13CD])
+                        winnerr = the_winner(year, d.properties.PCON13CD)
                         d3.select('#con_name').text(d.properties.PCON13NM);
                         d3.select('#party_name').text(winnerr.name + " " + winnerr.holdgain);
 
@@ -129,8 +133,8 @@
                             return b.votes - a.votes;
                         });
                         var pie = d3.layout.pie().value(function (d) {
-                                return d.votes
-                            })
+                            return d.votes
+                        })
                             .sort(function (a, b) {
                                 return a.votes < b.votes
                             })
@@ -196,9 +200,11 @@
                         name: "2015"
                     }, {
                         name: "2017"
+                    }, {
+                        name: "2019"
                     }])
                     .enter().append("label").attr("class", function (x, i) {
-                        return "btn btn-secondary" + (i == 1 ? " active" : "");
+                        return "btn btn-secondary" + (i == 2 ? " active" : "");
                     });
 
                 labelEnter.append("input")
@@ -227,19 +233,37 @@
             return '<td>-</td>';
         }
 
-        function the_winner(constituency) {
-            winner = undefined, votes = 0;
+
+        function find_winner(year, id) {
+            constituency = results[year][id]
+            var winner = undefined, votes = 0;
             for (var party in constituency) {
                 if (constituency[party]['votes'] > votes) {
                     votes = constituency[party]['votes'];
                     winner = party
-                    hold_gain = constituency[party]['sitting_mp'] === "Yes" ? "hold" : "gain";
                 }
             }
-            return {
-                'name': winner,
-                'holdgain': hold_gain
-            };
+            return winner;
+        }
+
+        function the_winner(yearr, id) {
+            if (!(id in winners[yearr])) {
+                var winner = find_winner(yearr, id);
+
+                if (yearr == 2019)
+                    var hold_gain = the_winner(2017, id).name === winner ? "hold" : "gain";
+                else if (yearr == 2017)
+                    var hold_gain = the_winner(2015, id).name === winner ? "hold" : "gain";
+                else if (yearr == 2015)
+                    var hold_gain = ''
+
+                winners[yearr][id] = {
+                    'name': winner,
+                    'holdgain': hold_gain
+                }
+            }
+
+            return winners[yearr][id];
         }
 
         //Update map on zoom/pan
@@ -252,12 +276,13 @@
             year = new_year;
             features.selectAll("path")
                 .transition().duration(500).style("fill", function (d) {
-                    winner = the_winner(results[year][d.properties.PCON13CD]).name;
+                    winner = the_winner(year, d.properties.PCON13CD).name;
                     return winner in party_colours ? party_colours[winner] : 'black';
                 })
         }
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"
+        integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
         crossorigin="anonymous"></script>
