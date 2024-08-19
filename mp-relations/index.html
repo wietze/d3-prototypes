@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-@Wietze, (c) 2016
+@Wietze, (c) 2016-2024
 Licenced under GPLv3
 -->
 <meta charset="utf-8">
@@ -116,7 +116,9 @@ Licenced under GPLv3
 
 
     var colors = {};
-    var party_colors = { "Labour": "#DC241F", "LabourCo-op": "#DC241F", "SocialDemocraticLabourParty": "#DC241F", "Conservative": "#0087DC", "UKIndependenceParty": "#70147A", "GreenParty": "#78B943", "LiberalDemocrat": "#FDBB30", "ScottishNationalParty": "#FFFF00", "DemocraticUnionistParty": "#CC3300", "SinnFein": "#006600", "Speaker": "#333333", "Independent": "#333333", "UlsterUnionistParty": "#9999FF" };
+    var party_colors = {
+      "Labour": "#DC241F", "LabourCo-op": "#DC241F", "SocialDemocraticLabourParty": "#DC241F", "Conservative": "#0087DC", "UKIndependenceParty": "#70147A", "GreenParty": "#78B943", "LiberalDemocrat": "#FDBB30", "ScottishNationalParty": "#FFFF00", "DemocraticUnionistParty": "#CC3300", "SinnFein": "#006600", "Speaker": "#333333", "Independent": "#333333", "UlsterUnionistParty": "#9999FF", 'ReformUK': "#12B6CF", 'PlaidCymru': '#3F8428', "UlsterUnionistParty": "#9999FF", 'Alliance': '#F6CB2F', 'TraditionalUnionistVoice': '#0C3A6A', 'SocialDemocraticandLabourParty': '#2AA82C'
+    };
 
     var defs = svg.append("defs");
 
@@ -158,7 +160,7 @@ Licenced under GPLv3
       return colors[start_name + end_name];
     }
 
-    d3.json("example_mps_2019.json", function (error, classes) {
+    d3.json("example_mps_2024.json", function (error, classes) {
       if (error) throw error;
 
       counts = {}; max_degree = 0;
@@ -180,7 +182,7 @@ Licenced under GPLv3
       node = node
         .data(nodes.filter(function (n) { return !n.children; }))
         .enter().append("text")
-        .attr("class", function (d) { return "node-inactive node " + d.party.replace(/[ &()]/g, "");; })
+        .attr("class", function (d) { return "node-inactive node " + d.party?.replace(/[ &()]/g, ""); })
         .attr("dy", ".31em")
         .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
         .style("text-anchor", function (d) { return d.x < 180 ? "start" : "end"; })
@@ -228,6 +230,7 @@ Licenced under GPLv3
         find(d.name, d);
       });
 
+      map[0]['children'] = map[0]['children'].filter(x => x.children.length > 0)
       return map[0];
     }
 

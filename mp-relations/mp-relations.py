@@ -5,13 +5,14 @@ from collections import Counter
 from urllib.parse import quote_plus
 
 import requests
+import xmltodict
 
 __author__    = "@Wietze"
-__copyright__ = "(c) 2016-2019"
+__copyright__ = "(c) 2016-2024"
 __licence__   = "GPLv3"
 
 API_KEY_GUARDIAN = 'test' # Or put your own API key here
-API_GUARDIAN = "http://content.guardianapis.com/search?q={{keyword}}&show-tags=keyword&api-key={api_key}".format(api_key=API_KEY_GUARDIAN)
+API_GUARDIAN = "http://content.guardianapis.com/search?q={{keyword}}&show-tags=keyword&api-key={api_key}&page-size=50&order-by=newest".format(api_key=API_KEY_GUARDIAN)
 API_PARLIAMENT = "http://data.parliament.uk/membersdataplatform/services/mnis/members/query/House=Commons|IsEligible=true/"
 # When Parliament is not in session, replace `IsEligible=true` with the following in the above query condition: `MemberShip=All|LeftSince=yyyy-mm-dd`
 
@@ -20,15 +21,18 @@ normalise_name = lambda x: re.sub('^(Sir |Dame |Mr |Ms |Mrs |Dr )', '', x).strip
 
 def get_mp_data():
     print("Querying for MPs...")
-    mps = requests.get(API_PARLIAMENT, headers={"Accept":"application/json"}).json()
+    mps = xmltodict.parse(requests.get(API_PARLIAMENT).text)
 
     # Create common structure
     members = {normalise_name(member['DisplayAs']): {"party": member['Party']['#text'], "id":id, "mentioned_with":[], 'degree':0} for id, member in enumerate(mps["Members"]["Member"])}
 
+    session = requests.Session()
     for i, member in enumerate(members.keys(), start=1):
         print("Querying the Guardian... [{}/{}]".format(i, len(members)), end="\r")
-        url = API_GUARDIAN.format(keyword=quote_plus(member))
-        guardian_data = requests.get(url).json()
+        url = API_GUARDIAN.format(keyword=quote_plus(f'"{member}"'))
+        guardian_result = session.get(url)
+        assert guardian_result.status_code == 200
+        guardian_data = guardian_result.json()
         if not guardian_data["response"]["results"]: continue
         tags = []
         for result in guardian_data["response"]["results"]:

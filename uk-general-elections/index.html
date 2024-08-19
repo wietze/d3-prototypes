@@ -5,8 +5,7 @@
 
 <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
-        integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
     <link rel="stylesheet" href="style.css">
     <title>General Elections in the UK</title>
 </head>
@@ -16,8 +15,7 @@
         <div id="map"></div>
         <div id="right-panel" class="card">
             <div class="card-header" style="font-weight: bold;">Constituency Result</div>
-            <div class="card-block"
-                style="display: flex; flex-direction: column; align-items: safe center; overflow-x:scroll">
+            <div class="card-block" style="display: flex; flex-direction: column; align-items: safe center; overflow-x:scroll">
                 <div class="widget thumbnail">
                     <div id="text_cont">
                         <h4 id="con_name" style="line-height: 1em;" class="caption"></h4>
@@ -47,9 +45,10 @@
             </div>
         </div>
     </div>
-    <script>results = {}; winners = { 2019: {}, 2017: {}, 2015: {} }</script>
+    <script>results = {}; winners = { 2024: {}, 2019: {}, 2017: {}, 2015: {} }</script>
     <script src="https://d3js.org/d3.v3.min.js"></script>
     <script src="https://d3js.org/topojson.v1.min.js"></script>
+    <script src="2024.js"></script>
     <script src="2019.js"></script>
     <script src="2017.js"></script>
     <script src="2015.js"></script>
@@ -61,6 +60,7 @@
             "Conservative": "#0087DC",
             "UK Independence Party": "#70147A",
             "Green": "#008066",
+            "Scottish Green Party": "#008066",
             "Liberal Democrat": "#FDBB30",
             "Scottish National Party": "#FFFF00",
             "Democratic Unionist Party": "#CC3300",
@@ -69,14 +69,26 @@
             "Independent": "#BBBBBB",
             "Ulster Unionist Party": "#9999FF",
             'Plaid Cymru': '#3F8428',
-            'Brexit Party': "#12B6CF"
+            'Brexit Party': "#12B6CF",
+            'Reform UK': "#12B6CF",
+            'Alba Party': '#005EB8',
+            'Alliance': '#F6CB2F',
+            'Traditional Unionist Voice': '#0C3A6A',
+            'Social Democratic and Labour Party': '#2AA82C'
         };
+
+        const map24to13 = { // Constituency boundaries were redrawn in 2023/2024
+            "S14000060": "S14000001", "S14000061": "S14000002", "S14000063": "S14000003", "E14001063": "E14000530", "E14001064": "E14000531", "E14001065": "E14000532", "W07000082": "W07000043", "E14001066": "E14000533", "E14001067": "E14000534", "E14001068": "E14000535", "E14001069": "E14000536", "E14001070": "E14000537", "E14001071": "E14000538", "S14000107": "S14000006", "E14001072": "E14000539", "E14001073": "E14000540", "E14001076": "E14000543", "E14001077": "E14000544", "E14001078": "E14000545", "E14001079": "E14000546", "E14001080": "E14000547", "E14001081": "E14000549", "E14001082": "E14000550", "E14001084": "E14000552", "N05000001": "N06000001", "N05000002": "N06000002", "N05000004": "N06000004", "E14001085": "E14000553", "S14000108": "S14000008", "E14001087": "E14000556", "E14001088": "E14000557", "E14001089": "E14000558", "E14001091": "E14000559", "E14001092": "E14000560", "E14001093": "E14000561", "E14001096": "E14000564", "E14001097": "E14000565", "E14001098": "E14000566", "E14001099": "E14000567", "E14001100": "E14000568", "E14001101": "E14000569", "E14001102": "E14000570", "E14001105": "E14000573", "E14001108": "E14000576", "E14001109": "E14000577", "E14001110": "E14000578", "E14001112": "E14000580", "E14001113": "E14000581", "E14001114": "E14000582", "E14001115": "E14000584", "E14001116": "E14000585", "E14001117": "E14000586", "E14001118": "E14000587", "E14001119": "E14000588", "E14001120": "E14000589", "E14001121": "E14000590", "E14001124": "E14000593", "E14001125": "E14000594", "W07000086": "W07000073", "E14001130": "E14000598", "E14001132": "E14000599", "E14001134": "E14000600", "E14001135": "E14000601", "E14001138": "E14000605", "E14001139": "E14000606", "E14001140": "E14000607", "E14001142": "E14000609", "E14001144": "E14000611", "E14001145": "E14000612", "W07000088": "W07000076", "S14000069": "S14000009", "E14001147": "E14000614", "E14001148": "E14000616", "E14001149": "E14000617", "E14001150": "E14000618", "E14001151": "E14000619", "W07000090": "W07000051", "W07000091": "W07000080", "W07000092": "W07000079", "E14001152": "E14000620", "E14001153": "E14000621", "E14001154": "E14000622", "S14000109": "S14000010", "E14001155": "E14000623", "E14001156": "E14000624", "E14001157": "E14000626", "E14001158": "E14000627", "E14001159": "E14000628", "E14001160": "E14000629", "E14001161": "E14000630", "E14001162": "E14000631", "E14001165": "E14000632", "E14001166": "E14000633", "E14001167": "E14000634", "E14001168": "E14000635", "E14001169": "E14000636", "E14001170": "E14000637", "E14001171": "E14000638", "E14001172": "E14000639", "E14001173": "E14000641", "E14001174": "E14000642", "E14001176": "E14000644", "E14001177": "E14000645", "E14001178": "E14000646", "E14001181": "E14000650", "E14001182": "E14000651", "E14001184": "E14000652", "E14001185": "E14000653", "E14001187": "E14000656", "E14001189": "E14000657", "E14001190": "E14000658", "E14001191": "E14000659", "E14001192": "E14000660", "E14001193": "E14000662", "E14001194": "E14000663", "E14001195": "E14000664", "E14001198": "E14000668", "E14001200": "E14000669", "E14001205": "E14000673", "S14000073": "S14000013", "S14000074": "S14000014", "W07000096": "W07000061", "E14001207": "E14000674", "E14001208": "E14000675", "E14001209": "E14000676", "E14001211": "E14000677", "N05000005": "N06000005", "E14001213": "E14000679", "E14001214": "E14000680", "N05000006": "N06000006", "S14000021": "S14000021", "E14001215": "E14000681", "E14001218": "E14000682", "E14001219": "E14000684", "E14001220": "E14000685", "S14000079": "S14000023", "S14000080": "S14000024", "S14000081": "S14000025", "S14000082": "S14000026", "E14001225": "E14000691", "E14001226": "E14000693", "E14001227": "E14000694", "E14001228": "E14000695", "E14001229": "E14000696", "E14001230": "E14000697", "E14001231": "E14000698", "S14000083": "S14000028", "E14001235": "E14000700", "E14001236": "E14000701", "N05000007": "N06000007", "E14001237": "E14000702", "E14001238": "E14000703", "E14001239": "E14000704", "E14001240": "E14000705", "N05000008": "N06000008", "E14001242": "E14000706", "E14001243": "E14000707", "E14001245": "E14000710", "E14001246": "E14000711", "S14000084": "S14000030", "S14000085": "S14000031", "S14000086": "S14000032", "S14000087": "S14000034", "S14000088": "S14000035", "E14001248": "E14000712", "E14001252": "E14000713", "W07000097": "W07000046", "E14001254": "E14000715", "E14001256": "E14000717", "E14001257": "E14000718", "E14001258": "E14000719", "E14001259": "E14000720", "E14001260": "E14000721", "E14001262": "E14000723", "E14001267": "E14000729", "E14001269": "E14000730", "E14001270": "E14000731", "E14001271": "E14000732", "E14001272": "E14000733", "E14001273": "E14000734", "E14001274": "E14000735", "E14001275": "E14000736", "E14001276": "E14000737", "E14001277": "E14000738", "E14001278": "E14000739", "E14001279": "E14000741", "E14001281": "E14000743", "E14001283": "E14000744", "E14001284": "E14000745", "E14001285": "E14000746", "E14001287": "E14000748", "E14001290": "E14000750", "E14001292": "E14000751", "E14001294": "E14000753", "E14001295": "E14000754", "E14001297": "E14000756", "E14001298": "E14000757", "E14001299": "E14000758", "E14001300": "E14000759", "E14001301": "E14000760", "E14001302": "E14000761", "E14001305": "E14000763", "E14001306": "E14000764", "E14001309": "E14000767", "E14001311": "E14000769", "S14000110": "S14000040", "E14001312": "E14000770", "E14001313": "E14000771", "E14001317": "E14000775", "N05000009": "N06000009", "E14001320": "E14000778", "E14001321": "E14000779", "E14001322": "E14000780", "E14001326": "E14000782", "E14001327": "E14000783", "E14001328": "E14000784", "E14001330": "E14000786", "E14001331": "E14000787", "E14001334": "E14000790", "E14001335": "E14000791", "E14001336": "E14000792", "E14001338": "E14000793", "E14001339": "E14000794", "E14001340": "E14000795", "E14001341": "E14000796", "S14000095": "S14000044", "W07000098": "W07000045", "E14001342": "E14000797", "E14001343": "E14000798", "E14001345": "E14000800", "E14001347": "E14000802", "E14001348": "E14000803", "E14001350": "E14000805", "E14001351": "E14000806", "E14001352": "E14000807", "E14001354": "E14000809", "E14001355": "E14000810", "E14001359": "E14000813", "E14001362": "E14000814", "E14001363": "E14000815", "E14001365": "E14000816", "E14001366": "E14000817", "N05000010": "N06000010", "E14001368": "E14000820", "S14000045": "S14000045", "E14001370": "E14000821", "E14001371": "E14000823", "E14001372": "E14000825", "S14000027": "S14000027", "E14001373": "E14000827", "E14001374": "E14000828", "E14001375": "E14000829", "E14001376": "E14000830", "E14001379": "E14000833", "E14001380": "E14000834", "W07000104": "W07000055", "N05000011": "N06000011", "E14001381": "E14000835", "N05000012": "N06000012", "S14000048": "S14000048", "E14001385": "E14000837", "E14001387": "E14000838", "E14001388": "E14000839", "N05000013": "N06000013", "E14001389": "E14000840", "E14001390": "E14000842", "E14001391": "E14000843", "S14000100": "S14000049", "E14001392": "E14000844", "E14001393": "E14000845", "E14001395": "E14000847", "E14001396": "E14000848", "E14001398": "E14000849", "E14001399": "E14000850", "E14001401": "E14000855", "E14001403": "E14000857", "E14001404": "E14000858", "E14001405": "E14000859", "E14001406": "E14000861", "E14001407": "E14000862", "E14001408": "E14000863", "E14001409": "E14000864", "E14001410": "E14000865", "E14001412": "E14000867", "E14001413": "E14000868", "E14001414": "E14000869", "E14001415": "E14000870", "S14000051": "S14000051", "E14001417": "E14000872", "E14001419": "E14000873", "E14001420": "E14000874", "S14000101": "S14000052", "S14000102": "S14000053", "E14001423": "E14000876", "E14001425": "E14000878", "E14001426": "E14000879", "E14001427": "E14000880", "W07000106": "W07000075", "E14001429": "E14000881", "E14001430": "E14000882", "E14001431": "E14000883", "E14001432": "E14000884", "E14001433": "E14000885", "E14001434": "E14000887", "E14001437": "E14000888", "E14001440": "E14000891", "E14001441": "E14000892", "E14001442": "E14000893", "E14001443": "E14000894", "E14001445": "E14000896", "E14001446": "E14000897", "E14001447": "E14000898", "E14001448": "E14000900", "E14001449": "E14000901", "E14001450": "E14000902", "E14001451": "E14000903", "E14001452": "E14000904", "E14001453": "E14000905", "E14001454": "E14000906", "E14001456": "E14000907", "E14001457": "E14000908", "E14001460": "E14000912", "E14001461": "E14000913", "E14001462": "E14000914", "E14001463": "E14000916", "E14001465": "E14000918", "E14001466": "E14000921", "E14001467": "E14000919", "E14001468": "E14000922", "E14001469": "E14000923", "E14001470": "E14000920", "E14001472": "E14000925", "E14001474": "E14000927", "E14001475": "E14000928", "E14001476": "E14000929", "E14001477": "E14000930", "N05000014": "N06000014", "E14001480": "E14000933", "E14001481": "E14000934", "E14001483": "E14000935", "E14001485": "E14000936", "N05000015": "N06000015", "E14001486": "E14000938", "E14001487": "E14000939", "E14001488": "E14000940", "E14001489": "E14000941", "E14001490": "E14000942", "E14001491": "E14000943", "E14001492": "E14000944", "E14001494": "E14000946", "E14001495": "E14000950", "E14001496": "E14000951", "E14001497": "E14000952", "E14001498": "E14000954", "E14001499": "E14000955", "E14001500": "E14000956", "E14001504": "E14000958", "E14001505": "E14000959", "E14001507": "E14000960", "E14001508": "E14000961", "E14001509": "E14000962", "E14001510": "E14000963", "E14001511": "E14000964", "E14001513": "E14000965", "E14001514": "E14000966", "E14001515": "E14000967", "E14001516": "E14000968", "E14001517": "E14000969", "E14001518": "E14000970", "E14001520": "E14000972", "E14001521": "E14000973", "E14001522": "E14000974", "E14001524": "E14000976", "N05000016": "N06000016", "E14001526": "E14000977", "E14001528": "E14000979", "E14001529": "E14000980", "E14001530": "E14000981", "E14001531": "E14000982", "E14001532": "E14000983", "E14001534": "E14000984", "E14001535": "E14000985", "W07000108": "W07000047", "E14001538": "E14000986", "E14001539": "E14000987", "E14001541": "E14000989", "E14001542": "E14000990", "E14001543": "E14000992", "E14001544": "E14000993", "E14001545": "E14000994", "E14001546": "E14000995", "E14001550": "E14000998", "E14001551": "E14000999", "W07000109": "W07000053", "E14001553": "E14001002", "E14001554": "E14001003", "E14001555": "E14001004", "E14001556": "E14001005", "E14001557": "E14001006", "N05000017": "N06000017", "E14001558": "E14001007", "W07000110": "W07000078", "E14001561": "E14001010", "E14001563": "E14001013", "E14001564": "E14001017", "E14001565": "E14001018", "E14001566": "E14001019", "E14001568": "E14001021", "E14001573": "E14001027", "S14000111": "S14000058", "E14001575": "E14001031", "S14000106": "S14000059", "E14001577": "E14001033", "E14001578": "E14001034", "N05000018": "N06000018", "E14001579": "E14001035", "E14001580": "E14001037", "E14001581": "E14001038", "E14001585": "E14001039", "E14001586": "E14001040", "E14001587": "E14001041", "E14001588": "E14001042", "E14001589": "E14001044", "E14001590": "E14001045", "E14001591": "E14001046", "E14001592": "E14001047", "E14001593": "E14001048", "E14001594": "E14001049", "E14001595": "E14001050", "E14001597": "E14001052", "E14001599": "E14001055", "W07000111": "W07000044", "E14001600": "E14001056", "E14001601": "E14001058", "E14001602": "E14001059", "E14001603": "E14001060", "W07000112": "W07000041", "E14001604": "E14001061", "E14001605": "E14001062"
+        }
 
         //Map dimensions (in pixels)
         var width = 1.5 * 320,
             height = 1.5 * 600;
 
-        year = 2019
+        year = 2024
+
+        const getAreaCode = (d, year) => year < 2024 ? d.properties.PCON13CD : d.properties.PCON24CD;
+        const getAreaName = (d, year) => year < 2024 ? d.properties.PCON13NM : d.properties.PCON24NM;
 
         //Map projection
         var projection = d3.geo.mercator()
@@ -105,125 +117,134 @@
 
         svg.call(zoom);
 
-        d3.json("https://raw.githubusercontent.com/martinjc/UK-GeoJSON/master/json/electoral/gb/topo_wpc.json",
-            function (error, geodata) {
-                if (error) return console.log(error); //unknown error, check the console
+        function draw(url) {
+            features.html("");
 
-                //Create a path for each map feature in the data
-                features.selectAll("path")
-                    .data(topojson.feature(geodata, geodata.objects.wpc).features) //generate features from TopoJSON
-                    .enter()
-                    .append("path")
-                    .style("fill", function (d) {
-                        winner = the_winner(year, d.properties.PCON13CD).name;
-                        return winner in party_colours ? party_colours[winner] : 'black';
-                    })
-                    .attr("d", path)
-                    .on("mouseover", function (d) {
-                        winnerr = the_winner(year, d.properties.PCON13CD)
-                        d3.select('#con_name').text(d.properties.PCON13NM);
-                        d3.select('#party_name').text(winnerr.name + " " + winnerr.holdgain);
 
-                        model2 = results[year][d.properties.PCON13CD];
-                        var model = Object.keys(model2).map(function (key) {
-                            model2[key]['name'] = key;
-                            return model2[key];
-                        });
-                        model.sort(function (a, b) {
-                            return b.votes - a.votes;
-                        });
-                        var pie = d3.layout.pie().value(function (d) {
-                            return d.votes
+            d3.json(url,
+                function (error, geodata) {
+                    if (error) return console.error(error); //unknown error, check the console
+
+                    //Create a path for each map feature in the data
+                    features.selectAll("path")
+                        .data(topojson.feature(geodata, geodata.objects['wpc']).features) //generate features from TopoJSON
+                        .enter()
+                        .append("path")
+                        .style("fill", function (d) {
+                            winner = the_winner(year, getAreaCode(d, year)).name;
+                            return winner in party_colours ? party_colours[winner] : 'black';
                         })
-                            .sort(function (a, b) {
-                                return a.votes < b.votes
+                        .attr("d", path)
+                        .on("mouseover", function (d) {
+                            winnerr = the_winner(year, getAreaCode(d, year))
+                            d3.select('#con_name').text(getAreaName(d, year));
+                            d3.select('#party_name').text(winnerr.name + " " + winnerr.holdgain);
+
+                            model2 = results[year][getAreaCode(d, year)];
+                            var model = Object.keys(model2).map(function (key) {
+                                model2[key]['name'] = key;
+                                return model2[key];
+                            });
+                            model.sort(function (a, b) {
+                                return b.votes - a.votes;
+                            });
+                            var pie = d3.layout.pie().value(function (d) {
+                                return d.votes
                             })
-                            .padAngle(.03);
+                                .sort(function (a, b) {
+                                    return a.votes < b.votes
+                                })
+                                .padAngle(.03);
 
-                        var w = 300,
-                            h = 300;
+                            var w = 300,
+                                h = 300;
 
-                        var outerRadius = w / 2;
-                        var innerRadius = 100;
+                            var outerRadius = w / 2;
+                            var innerRadius = 100;
 
-                        var color = d3.scale.category10();
+                            var color = d3.scale.category10();
 
-                        var arc = d3.svg.arc()
-                            .outerRadius(outerRadius)
-                            .innerRadius(innerRadius);
-                        var svg = d3.select("#chart")
-                            .append("svg")
-                            .attr({
-                                width: w,
-                                height: h,
-                                class: 'shadow'
-                            }).append('g')
-                            .attr({
-                                transform: 'translate(' + w / 2 + ',' + h / 2 + ')'
+                            var arc = d3.svg.arc()
+                                .outerRadius(outerRadius)
+                                .innerRadius(innerRadius);
+                            var svg = d3.select("#chart")
+                                .append("svg")
+                                .attr({
+                                    width: w,
+                                    height: h,
+                                    class: 'shadow'
+                                }).append('g')
+                                .attr({
+                                    transform: 'translate(' + w / 2 + ',' + h / 2 + ')'
+                                });
+                            var g = svg.selectAll('path')
+                                .data(pie(model))
+                                .enter()
+
+                            g.append('path')
+                                .attr({
+                                    d: arc
+                                })
+                                .style('fill', function (d, i) {
+                                    return party_colours[d.data.name];
+                                });
+
+                            g.append("text")
+                                .attr("transform", function (d) {
+                                    return "translate(" + arc.centroid(d) + ")";
+                                }).attr("text-anchor", "middle")
+                                .text(function (d) {
+                                    return d.data.share > 0.035 ? ((d.data.share) * 100).toFixed(1) + '%' : "";
+                                });
+
+                            var tab = d3.select("#table").selectAll('span').data(model).enter();
+                            tab.append('tr').html(function (d) {
+                                return "<td style='width: 20px; background-color: " + party_colours[d.name] +
+                                    "'></td><td>" + d.name + "</td><td>" + d.first_name + " " + d.last_name +
+                                    "</td><td>" + d.votes.toLocaleString('en-GB', { style: 'decimal', }) + "</td>" + diff(d.change);
                             });
-                        var g = svg.selectAll('path')
-                            .data(pie(model))
-                            .enter()
-
-                        g.append('path')
-                            .attr({
-                                d: arc
-                            })
-                            .style('fill', function (d, i) {
-                                return party_colours[d.data.name];
-                            });
-
-                        g.append("text")
-                            .attr("transform", function (d) {
-                                return "translate(" + arc.centroid(d) + ")";
-                            }).attr("text-anchor", "middle")
-                            .text(function (d) {
-                                return d.data.share > 0.035 ? ((d.data.share) * 100).toFixed(1) + '%' : "";
-                            });
-
-                        var tab = d3.select("#table").selectAll('span').data(model).enter();
-                        tab.append('tr').html(function (d) {
-                            return "<td style='width: 20px; background-color: " + party_colours[d.name] +
-                                "'></td><td>" + d.name + "</td><td>" + d.first_name + " " + d.last_name +
-                                "</td><td>" + d.votes.toLocaleString() + "</td>" + diff(d.change);
+                        })
+                        .on("mouseout", function (d) {
+                            d3.select('#con_name').text("");
+                            d3.select('#party_name').text("");
+                            d3.select("#chart").text("");
+                            d3.select('#table').html("");
                         });
-                    })
-                    .on("mouseout", function (d) {
-                        d3.select('#con_name').text("");
-                        d3.select('#party_name').text("");
-                        d3.select("#chart").text("");
-                        d3.select('#table').html("");
-                    });
-
-                var labelEnter = d3.select("#years").selectAll("span")
-                    .data([{
-                        name: "2015"
-                    }, {
-                        name: "2017"
-                    }, {
-                        name: "2019"
-                    }])
-                    .enter().append("label").attr("class", function (x, i) {
-                        return "btn btn-secondary" + (i == 2 ? " active" : "");
-                    });
-
-                labelEnter.append("input")
-                    .attr({
-                        type: "radio",
-                        name: "mode",
-                        onchange: function (d, i) {
-                            return "changeyear(" + d.name + ")";
-                        }
-                    })
-                    .property("checked", function (d, i) {
-                        return (i === 1);
-                    });
-
-                labelEnter.append("span").text(function (d) {
-                    return d.name
                 });
 
+        }
+
+        changeYear(year);
+
+        var labelEnter = d3.select("#years").selectAll("span")
+            .data([{
+                name: "2015"
+            }, {
+                name: "2017"
+            }, {
+                name: "2019"
+            }, {
+                name: "2024"
+            }])
+            .enter().append("label").attr("class", function (x, i) {
+                return "btn btn-secondary" + (x.name == year ? " active" : "");
             });
+
+        labelEnter.append("input")
+            .attr({
+                type: "radio",
+                name: "mode",
+                onchange: function (d, i) {
+                    return "changeYear(" + d.name + ")";
+                }
+            })
+            .property("checked", function (d, i) {
+                return (i === 1);
+            });
+
+        labelEnter.append("span").text(function (d) {
+            return d.name
+        });
 
         function diff(change) {
             if (change > 0)
@@ -250,7 +271,11 @@
             if (!(id in winners[yearr])) {
                 var winner = find_winner(yearr, id);
 
-                if (yearr == 2019)
+                if (yearr == 2024) {
+                    let last_year = the_winner(2019, map24to13[id] || id);
+                    var hold_gain = last_year.name !== undefined ? (last_year.name === winner ? "hold" : "gain") : "";
+                }
+                else if (yearr == 2019)
                     var hold_gain = the_winner(2017, id).name === winner ? "hold" : "gain";
                 else if (yearr == 2017)
                     var hold_gain = the_winner(2015, id).name === winner ? "hold" : "gain";
@@ -272,17 +297,18 @@
                 .selectAll("path").style("stroke-width", 0.25 / zoom.scale() + "px");
         }
 
-        function changeyear(new_year) {
+        function changeYear(new_year) {
+            if (year >= 2024 || new_year >= 2024)
+                draw(new_year >= 2024 ? "wpc24.json" : "https://raw.githubusercontent.com/martinjc/UK-GeoJSON/master/json/electoral/gb/topo_wpc.json");
             year = new_year;
             features.selectAll("path")
                 .transition().duration(500).style("fill", function (d) {
-                    winner = the_winner(year, d.properties.PCON13CD).name;
+                    winner = the_winner(year, getAreaCode(d, year)).name;
                     return winner in party_colours ? party_colours[winner] : 'black';
-                })
+                });
+            year = new_year;
         }
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"
-        integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
-        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
